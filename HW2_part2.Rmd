@@ -1,0 +1,96 @@
+---
+title: "Homework 2 Computational Exercises"
+date: "2023-02-20"
+output: 
+  pdf_document:
+    keep_tex: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 5 Exercise 3.7
+
+## (a) Fit multiple regression model to predict sales
+
+```{r part (a)}
+dat <- read.csv("Carseats.csv")
+dat$Urban <- as.factor(dat$Urban)
+dat$US <- as.factor(dat$US)
+model <- lm(Sales ~ Price + Urban + US, data = dat)
+summary(model)
+```
+
+## (b) Provide an interpretation of each coefficient
+
+The coefficient for Price is -0.054. That means for every unit increase in Price, the Sales will go down by 0.054. The coefficient for Urban is -0.023. That means if the store is urban, then sales will be 0.023 less than if it is not. The coefficient for US is 1.201. That means the sales is 1.201 higher if the store is in the U.S.
+
+### (c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+$$Sales = 13.043 + -0.054*Price + -0.022*Urban + 1.201*US$$ For qualitative variables, Urban=1 if the store is in urban area, Urban=0 if it is not. US=1 if the store is in the U.S., US=0 if it is not.
+
+### (d) For which of the predictors can you reject the null hypothesis $\beta_j =0$?
+
+Since the p-value for both Price and US are very close to zero, we can reject the null hypothesis, and say that it not equal to zero at confidence level 0.05.
+
+### (e) Fit a smaller model
+
+```{r part (e)}
+model2 <- lm(Sales ~ Price + US, data = dat)
+summary(model2)
+```
+
+### (f) How well do the models in (a) and (e) fit the data?
+
+The adjust-$R^2$ for (a) is 0.2335, for (e) is 0.2354. So, the reduced model from part (e) is slightly better.
+
+### (g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+
+```{r part g}
+confint(model2)
+```
+
+```{r part h}
+par(mfrow = c(2, 2))
+plot(model2)
+```
+
+In the residuals vs leverage plot, there are no outliers, all of them are less than 3. However, there are leverage points, because (p+1)/n=3/400=0.0075, we see that there are a few leverage points, but it is not very influential because the Cook's distance is lower than 1.
+
+# Problem 6 LDA vs Logistic Regression
+
+```{r problem 6 read in data}
+wine <- read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data", sep = ",", header = FALSE)
+names(wine) <- c('class', 'Alcohol', 'Malic', 'Ash', 
+                      'Alcalinity', 'Magnesium', 'Phenols', 
+                      'Flavanoids', 'Nonflavanoids',
+                      'Proanthocyanins', 'Color', 'Hue', 
+                      'Dilution', 'Proline')
+wine$class <- as.factor(wine$class)
+```
+
+1.  Implement a Linear Discriminant Analysis (LDA) classifier using all thirteen features to predict the three classes. Evaluate the accuracy of the LDA classifier on the training sample. (4 points)
+```{r problem 6 lda}
+library(MASS)
+library(caret)
+modelLDA <- lda(class ~ ., wine)
+pred <- predict(modelLDA)$class
+result <- confusionMatrix(pred, wine$class)
+result$overall
+
+wine.lda.predict <- train(class ~ ., method = "lda", data = wine)
+confusionMatrix(wine$class, predict(wine.lda.predict, wine))
+```
+The accuracy is 100%.
+
+2. Repeat the same procedure for a multiclass logistic regression model
+```{r problem 6 part 2}
+library(nnet)
+modelmulti <- multinom(class ~., data = wine)
+pred <- predict(modelmulti)
+# result <- confusionMatrix(pred, wine$class)
+# result$overall
+mean(pred == wine$class)
+```
+3. The two methods both had 100% accuracy. Both methods are linear classifiers, we think that the classes are well separated linearly.
